@@ -9,7 +9,6 @@ import java.lang.reflect.ParameterizedType;
 
 public class ItemDAO {
 
-    private Class<ItemModel> type;
     public final SessionFactory sessionFactory;
 
     public ItemDAO(){
@@ -40,7 +39,7 @@ public class ItemDAO {
     public ItemModel findById(Integer id) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
-        ItemModel entity = session.find(type, id);
+        ItemModel entity = session.find(ItemModel.class, id);
         session.getTransaction().commit();
         session.close();
         return entity;

@@ -1,19 +1,17 @@
 package org.example.model;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
 @Setter
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "items")
-@MappedSuperclass
+//@MappedSuperclass
 public class ItemModel {
 
     @Id
