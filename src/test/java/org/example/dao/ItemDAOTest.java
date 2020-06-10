@@ -1,8 +1,9 @@
 package org.example.dao;
 
-import org.example.model.ItemModel;
+import org.example.model.Item;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,15 +15,17 @@ class ItemDAOTest {
 
     @Test
     void save() {
-        ItemModel item = new ItemModel(1,"test_name", "t_code", 123, 1);
+//        Item item = new Item(itemId, name, url, imageUrl, price, initPrice, availability);
+
+        Item item = new Item("1","test_name","url", "imageUrl", BigDecimal.valueOf(2.5),BigDecimal.valueOf(123), "1");
         itemDAO.save(item);
-        item.setCode("test_code");
+        item.setUrl("test_code");
         itemDAO.update(item);
-        ItemModel itemFromDB = itemDAO.findById(item.getId());
+        Item itemFromDB = itemDAO.findById(Integer.parseInt(item.getItemId()));
         assertNotNull(itemFromDB);
-        assertEquals(item.getCode(), itemFromDB.getCode());
+        assertEquals(item.getUrl(), itemFromDB.getUrl());
 
         itemDAO.delete(item);
-        assertNull(itemDAO.findById(item.getId()));
+        assertNull(itemDAO.findById(Integer.parseInt(item.getItemId())));
     }
 }

@@ -1,11 +1,9 @@
 package org.example.dao;
 
 import org.example.factory.impl.PostgresFactory;
-import org.example.model.ItemModel;
+import org.example.model.Item;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-
-import java.lang.reflect.ParameterizedType;
 
 public class ItemDAO {
 
@@ -16,18 +14,18 @@ public class ItemDAO {
         sessionFactory = new PostgresFactory().getSessionFactory();
     }
 
-    public ItemModel save(ItemModel entity) {
+    public Item save(Item entity) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
         Integer id = (Integer) session.save(entity);
-        entity.setId(id);
+        entity.setItemId(id.toString());
         session.getTransaction().commit();
         session.close();
 
         return entity;
     }
 
-    public ItemModel update(ItemModel entity) {
+    public Item update(Item entity) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
         session.update(entity);
@@ -36,16 +34,16 @@ public class ItemDAO {
         return entity;
     }
 
-    public ItemModel findById(Integer id) {
+    public Item findById(Integer id) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
-        ItemModel entity = session.find(ItemModel.class, id);
+        Item entity = session.find(Item.class, id);
         session.getTransaction().commit();
         session.close();
         return entity;
     }
 
-    public void delete(ItemModel entity) {
+    public void delete(Item entity) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
         session.delete(entity);

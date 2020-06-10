@@ -1,7 +1,7 @@
 package org.example.factory.impl;
 
 import org.example.factory.HibernateSessionFactory;
-import org.example.model.ItemModel;
+import org.example.model.Item;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
@@ -30,7 +30,7 @@ public class PostgresFactory implements HibernateSessionFactory {
             ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().
                     applySettings(configuration.getProperties()).build();
 
-            configuration.addAnnotatedClass(ItemModel.class);
+            configuration.addAnnotatedClass(Item.class);
 
             sessionFactory = configuration.buildSessionFactory(serviceRegistry);
         }
