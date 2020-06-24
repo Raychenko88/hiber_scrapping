@@ -13,9 +13,12 @@ import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 @RequiredArgsConstructor
 public class NavigationJsonParserService extends Thread {
+    private static final Logger LOG =
+            Logger.getLogger(PromProductParserService.class.getName());
 
 
     private final List<Item> items;
@@ -26,7 +29,6 @@ public class NavigationJsonParserService extends Thread {
 
     @Override
     public void run() {
-        NavigationJsonParserService navigationJsonParserService = new NavigationJsonParserService(items, url, isProxyRequired, threads);
         for (String url: urls()) {
             if (isProductPage()){
                 PromProductParserService promProductParserService = new PromProductParserService(items,url,document);
@@ -36,6 +38,8 @@ public class NavigationJsonParserService extends Thread {
                 PromNavigationParserService promNavigationParserService = new PromNavigationParserService(url, items, threads, document, isProxyRequired);
                 threads.add(promNavigationParserService);
                 promNavigationParserService.start();
+            }else {
+                LOG.warning(String.format("Page with url %s was not recognised", url));
             }
         }
 
