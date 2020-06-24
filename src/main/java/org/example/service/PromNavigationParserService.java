@@ -1,5 +1,7 @@
 package org.example.service;
 
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.example.model.Item;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,87 +12,68 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+@RequiredArgsConstructor
+public class PromNavigationParserService extends Thread {
+
+    private static final Logger LOG =
+            Logger.getLogger(PromNavigationParserService.class.getName());
+
+    private static final Integer AMOUNT_ITEMS = 51;
+
+    private final String url;
+    private final List<Item> items;
+    private final List<Thread> threads;
+    private final Document document;
+    private final Boolean isProxyRequired;
 
 
-    public class PromNavigationParserService extends Thread {
+    @Override
+    public void run() {
+        // product links extraction
+        Element productListElement = extractProductListElement();
+        Set<String> urls = productListElement.getElementsByAttributeValue("class", "product-item__name")
+                .stream()
+                .map(it -> it.getElementsByTag("a").first())
+                .map(it -> it.attr("href"))
+                .collect(Collectors.toSet());
 
-        private static final Logger LOG =
-                Logger.getLogger(PromNavigationParserService.class.getName());
+        LOG.info(String.format("%d items were found", urls.size()));
 
-        private final List<Item> items;
-        private final List<Thread> threads;
-        private final String url;
-
-        public PromNavigationParserService(List<Item> items, String url, List<Thread> threads) {
-            this.items = items;
-            this.url = url;
-            this.threads = threads;
+        for (String url: urls) {
+            RouterParserService router = new RouterParserService(items, url, isProxyRequired, threads);
+            threads.add(router);
+            router.start();
+//            only for test
+            break;
         }
-
-        @Override
-        public void run() {
-            // product links extraction
-            Document document = null;
-            try {
-                document = Jsoup.connect(url).get();
-                Element productGallery =
-                        document.getElementsByAttributeValue
-                                ("class", "products-list products-list_grid").first();
-
-                Elements productElements = productGallery.getElementsByAttributeValue("class", "product-item products-list__item");
-                Set<String> itemlinks = new HashSet<>();
-                productElements.forEach(it -> itemlinks.add(it.attr("href")));
-
-                int counter = 0;
-                for (String link : itemlinks) {
-                    if (counter > 1) {
-                        break;
-                    }
-                    if (link != null) {
-                        PromProductParserService promProductParserService =
-                                new PromProductParserService(items, link);
-                        threads.add(promProductParserService);
-                        promProductParserService.start();
-                        counter++;
-                    }
-                }
-            } catch (Exception e) {
-                LOG.severe("Products were not extracted by URL " + url);
+        // pagination
+        // do on the first page only
+        Integer lastPage = getLastPage();
+        LOG.info(String.format("Last page is %d", lastPage));
+        if (!StringUtils.containsIgnoreCase(url, "p=") && lastPage > 1){
+            for (int i = 2; i < 56; i++) {
+                String pageUrl = url + "?p=" + i;
+                RouterParserService router = new RouterParserService(items, pageUrl, isProxyRequired, threads);
+                threads.add(router);
+                router.start();
+                //            only for test
+                break;
             }
-
-            // pagination
-            try {
-                if (items.size() > 10) {
-                    return;
-                }
-                Elements lastPageElements =                                    // найти ЛИ элементы у которых класс = pager__number
-                        document.getElementsByAttributeValueContaining("class", "pager__number-link");
-                Set<String> links = new HashSet<>();
-                lastPageElements.forEach(it -> links.add(it.attr("href")));
-
-                if (!url.contains("p=")){
-                    for (String link : links) {
-                        PromNavigationParserService promNavigationParserService =
-                            new PromNavigationParserService(items, link, threads);
-                    threads.add(promNavigationParserService);
-                    promNavigationParserService.start();
-                    }
-                }
-
-//                if (!lastPageElements.isEmpty()) {
-//                    Element lastPageElement = lastPageElements.first();
-//
-//                    String nextPageUrl = lastPageElement.attr("href");
-//                    PromNavigationParserService promNavigationParserService =
-//                            new PromNavigationParserService(items, nextPageUrl, threads);
-//                    threads.add(promNavigationParserService);
-//                    promNavigationParserService.start();
-//
-//                }
-
-            } catch (Exception e) {
-                LOG.severe("Pages were not extracted by URL " + url);
-            }
-
         }
     }
+
+    private Integer getLastPage() {
+        String count = document.getElementById("productsCount").text();
+        count = count.replaceAll("\\D", "");
+        if (count.isEmpty()){
+            return 0;
+        }
+        return Integer.valueOf(count) / AMOUNT_ITEMS;
+    }
+
+    private Element extractProductListElement() {
+        return document.getElementById("categoryList");
+    }
+}

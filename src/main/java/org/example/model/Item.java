@@ -16,11 +16,17 @@ import java.math.BigDecimal;
 //@MappedSuperclass
 public class Item {
 
-    private String itemId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
+    @Column(name = "item_code")
+    private String itemCode;
     private String name;
     private String url;
+    @Column(name = "image_url")
     private String imageUrl;
     private BigDecimal price;
+    @Column(name = "initial_price")
     private BigDecimal initialPrice;
     private String availability;
 }

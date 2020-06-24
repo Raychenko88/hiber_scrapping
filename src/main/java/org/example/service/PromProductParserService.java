@@ -1,6 +1,9 @@
 package org.example.service;
 
 
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.example.Util.JsoupUtil;
 import org.example.model.Item;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,6 +15,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.logging.Logger;
 
+@RequiredArgsConstructor
 public class PromProductParserService extends Thread {
 
     private static final Logger LOG =
@@ -19,53 +23,52 @@ public class PromProductParserService extends Thread {
 
     private final List<Item> items;
     private final String url;
-
-    public PromProductParserService(List<Item> items, String url) {
-        this.items = items;
-        this.url = url;
-    }
+    private final Document document;
 
     @Override
     public void run() {
-        try {
-            Document document = Jsoup.connect(url).get();
-            Element productInfo =
-                    document.getElementsByAttributeValue
-                            ("class", "product-card__right").first();
 
-            String itemId = extractItemId(productInfo);
-            String name             = extractName(productInfo);
-            BigDecimal price        = extractPrice(productInfo);
-            BigDecimal initPrice    = extractInitPrice(productInfo, price);
-            String imageUrl         = extractImageUrl(document);
-            String availability     = extractAvailability(productInfo);
-
-
-            Item item = new Item(itemId, name, url, imageUrl, price, initPrice, availability);
-            items.add(item);
-        } catch (IOException e) {
-            LOG.severe(String.format("Item by URL %s was not extracted", url));
-        }
-
+        Element productElement = extractProductElement();
+        BigDecimal price = extractPrice();
+        Item item = Item.builder()
+                .itemCode(extractItemCode(productElement))
+                .name(extractName(productElement))
+                .url(url)
+                .imageUrl(extractImageUrl())
+                .price(price)
+                .initialPrice(extractInitPrice(price))
+                .availability(extractAvailability(productElement))
+                .build();
+        items.add(item);
     }
 
-    private String extractImageUrl(Element productInfo) {
+    private String extractItemCode(Element productElement) {
+        Element itemElement =  productElement.getElementsByAttributeValue("itemprop", "productID").first();
+        return StringUtils.trim(itemElement.text());
+    }
+
+
+    private Element extractProductElement() {
+        return document.getElementsByAttributeValue("class", "product-card__right").first();
+    }
+
+    private String extractImageUrl() {
+        Element productElement = document.getElementsByAttributeValue("class", "product-card__left").first();
         String result = "";
         try {
-            result = productInfo.getElementsByAttributeValue("property", "og:image"). // что в скобках?
-                    first().attr("content");
+            result = productElement.getElementById("galleryList").getElementsByTag("img").first().attr("src");
         } catch (Exception e) {
             LOG.severe(String.format("Item imageUrl by URL %s was not extracted", url));
         }
         return result;
     }
 
-    private BigDecimal extractPrice(Element productInfo) {
+    private BigDecimal extractPrice() {
         BigDecimal result = null;
         try {
-            String resultAsText = productInfo.
-                    getElementsByAttributeValue("class", "price-value").  // тут нужен 4тый атрибут
-                    first().attr("data-qaprice");
+            String resultAsText = document.
+                    getElementsByAttributeValue("property", "product:sale_price:amount").
+                    first().attr("content");
             result = new BigDecimal(resultAsText).setScale(2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             LOG.severe(String.format("Item price by URL %s was not extracted", url));
@@ -73,34 +76,33 @@ public class PromProductParserService extends Thread {
         return result;
     }
 
-    private String extractAvailability(Element productInfo) { //??????????????
+    private String extractAvailability(Element productInfo) {
         String result = "";
         try {
-            result = productInfo.getElementsByAttributeValue("data-qaid", "product_presence").
-                    first().text();
+            result = productInfo.getElementById("productHeaderInformerSource").text();
         } catch (Exception e) {
             LOG.severe(String.format("Item availability by URL %s was not extracted", url));
         }
-        return result;
+        return StringUtils.trim(result);
     }
 
     private String extractName(Element productInfo) {
         String result = "";
         try {
-            result = productInfo.getElementsByAttributeValue("class", "product-card__name").
+            result = productInfo.getElementsByTag("h1").
                     first().text();
         } catch (Exception e) {
             LOG.severe(String.format("Item name by URL %s was not extracted", url));
         }
-        return result;
+        return StringUtils.trim(result);
     }
 
-    private BigDecimal extractInitPrice(Element productInfo, BigDecimal price) {   //???????????
+    private BigDecimal extractInitPrice(BigDecimal price) {
         BigDecimal result = price;
         try {
-            String resultAsText = productInfo.
-                    getElementsByAttributeValue("data-qaid", "price_without_discount").
-                    first().attr("data-qaprice");
+            String resultAsText = document.
+                    getElementsByAttributeValue("property", "product:original_price:amount").
+                    first().attr("content");
             result = new BigDecimal(resultAsText).setScale(2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             if (price == null) {
@@ -110,15 +112,4 @@ public class PromProductParserService extends Thread {
         return result;
     }
 
-    private String extractItemId(Element productInfo) { //????????????
-        String result = "";
-        try {
-            result = productInfo.
-                    getElementsByAttributeValue("data-qaid", "product-sku").
-                    first().text();
-        } catch (Exception e) {
-            LOG.severe(String.format("Item id by URL %s was not extracted", url));
-        }
-        return result;
-    }
 }

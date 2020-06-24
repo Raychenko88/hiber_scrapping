@@ -1,6 +1,5 @@
-package org.example.factory.impl;
+package org.example.factory;
 
-import org.example.factory.HibernateSessionFactory;
 import org.example.model.Item;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -9,12 +8,11 @@ import org.hibernate.service.ServiceRegistry;
 
 import java.util.Properties;
 
-public class PostgresFactory implements HibernateSessionFactory {
+public class PostgresFactory {
 
-    private SessionFactory sessionFactory;
+    private static SessionFactory sessionFactory;
 
-    @Override
-    public SessionFactory getSessionFactory() {
+    public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             Configuration configuration = new Configuration();
             Properties properties = new Properties();

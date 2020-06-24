@@ -1,6 +1,6 @@
 package org.example.dao;
 
-import org.example.factory.impl.PostgresFactory;
+import org.example.factory.PostgresFactory;
 import org.example.model.Item;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -11,14 +11,14 @@ public class ItemDAO {
 
     public ItemDAO(){
 
-        sessionFactory = new PostgresFactory().getSessionFactory();
+        sessionFactory = PostgresFactory.getSessionFactory();
     }
 
     public Item save(Item entity) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
         Integer id = (Integer) session.save(entity);
-        entity.setItemId(id.toString());
+        entity.setId(id);
         session.getTransaction().commit();
         session.close();
 
