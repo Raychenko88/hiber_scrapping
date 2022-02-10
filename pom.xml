@@ -16,7 +16,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <junit.version>5.6.2</junit.version>
     <lombok.version>1.18.10</lombok.version>
-    <hibernate.version>5.4.10.Final</hibernate.version>
+    <hibernate.version>5.4.24.Final</hibernate.version>
     <postgres.version>42.2.9</postgres.version>
   </properties>
 
